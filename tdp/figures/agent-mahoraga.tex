@@ -1,0 +1,129 @@
+\begin{tikzpicture}[
+  font=\sffamily,
+  >=Stealth,
+  node distance=5mm and 6mm,
+  rose/.style={
+    draw=red!65!black, line width=0.85pt, rounded corners=2pt,
+    fill=red!11!white, align=center, inner sep=4pt, font=\sffamily\scriptsize
+  },
+  amber/.style={
+    draw=orange!70!black, line width=0.65pt, rounded corners=2pt,
+    fill=orange!12!white, align=center, inner sep=4pt, font=\sffamily\scriptsize
+  },
+  sky/.style={
+    draw=blue!65!black, line width=0.65pt, rounded corners=2pt,
+    fill=blue!9!white, align=center, inner sep=4pt, font=\sffamily\scriptsize
+  },
+  sage/.style={
+    draw=green!55!black, line width=0.65pt, rounded corners=2pt,
+    fill=green!10!white, align=center, inner sep=4pt, font=\sffamily\scriptsize
+  },
+  tealb/.style={
+    draw=cyan!65!black, line width=0.65pt, dashed, rounded corners=2pt,
+    fill=cyan!9!white, align=center, inner sep=4pt, font=\sffamily\scriptsize
+  },
+  violetb/.style={
+    draw=violet!60!black, line width=0.65pt, dashed, rounded corners=2pt,
+    fill=violet!9!white, align=center, inner sep=4pt, font=\sffamily\scriptsize
+  },
+  decision/.style={
+    draw=orange!70!black, line width=0.65pt, diamond, aspect=2.1,
+    fill=white, align=center, inner sep=1.5pt, font=\sffamily\scriptsize
+  },
+  arr/.style={->, line width=0.65pt, draw=black!80},
+  darr/.style={->, line width=0.6pt, dashed, draw=black!65},
+  lbl/.style={font=\sffamily\tiny, fill=white, inner sep=1pt}
+]
+
+% ================= PANEL (a): Built Agent Loop =================
+\node[sky, text width=2.4cm] (in) {\textbf{Inputs}\\Speech/text,\\seeded tasks,\\reset};
+\node[decision, right=8mm of in] (stopchk) {Bare stop\\or reset?};
+\node[rose, right=8mm of stopchk, text width=2.5cm] (faststop) {\textbf{Fast Stop}\\Cancel goal,\\drop queue\\(no LLM)};
+
+\node[sky, below=4mm of stopchk, text width=2.8cm] (runner) {\textbf{Task Runner}\\FIFO queue, state setup,\\history repair};
+
+\node[rose, below=4.5mm of runner, text width=3.0cm] (llm) {\textbf{ReAct LLM Loop}\\Local LLM (+ opt.\ cloud)\\Checklist reminder;\\call \& time bounds};
+
+\node[amber, left=13mm of llm, text width=2.6cm] (tools) {\textbf{Tool Execution}\\Sequential guard\\ROS~2 capabilities\\(Nav2, Vision, DB, Arms)};
+
+\node[decision, below=4.5mm of llm] (gate) {Checklist\\open?};
+
+\node[sage, right=10mm of gate, text width=2.6cm] (done) {\textbf{Run Ends}\\Console summary;\\await next task};
+
+\node[violetb, right=10mm of llm, text width=2.6cm] (fox) {\textbf{Foxglove \& Console}\\Live reasoning logs,\\task checklist,\\grasp 3D markers};
+
+\node[font=\sffamily\scriptsize\bfseries, text=red!65!black, anchor=south west, inner sep=1pt]
+  (atitle) at ([xshift=-2mm, yshift=1.5mm]in.north west) {(a) Built Agent Runtime \& Deterministic Safety Middleware (Competition \& Simulation)};
+
+\coordinate (qpath) at ([yshift=-4.2mm]gate.south);
+\coordinate (qpad)  at ([yshift=-7.2mm]gate.south);
+
+\begin{scope}[on background layer]
+  \node[draw=red!50!black, line width=0.65pt, dashed, rounded corners=3pt, fill=red!2!white,
+        inner sep=4.5pt, fit=(atitle) (in) (stopchk) (faststop) (runner) (llm) (tools) (gate) (done) (fox) (qpath) (qpad)] (panelA) {};
+\end{scope}
+
+% Panel (a) arrows
+\draw[arr] (in) -- (stopchk);
+\draw[arr] (stopchk) -- node[lbl, above] {yes} (faststop);
+\draw[arr] (stopchk) -- node[lbl, right] {no} (runner);
+\draw[arr] (runner) -- (llm);
+\draw[arr] ([yshift=2mm]llm.west) -- node[lbl, above] {calls} ([yshift=2mm]tools.east);
+\draw[arr] ([yshift=-2mm]tools.east) -- node[lbl, below] {results} ([yshift=-2mm]llm.west);
+\draw[arr] (llm.south) -- node[lbl, right] {no call} (gate.north);
+\draw[arr] (gate.west) -| ++(-6mm,0) |- node[lbl, pos=0.25, left] {yes ($\le 2\times$)} ([yshift=-5mm]llm.west);
+\draw[arr] (gate.east) -- node[lbl, above] {no} (done.west);
+\draw[darr] (tools.south) |- node[lbl, pos=0.72, below=0.5pt] {question tool pauses run} (qpath) -| (done.south);
+\draw[darr] (llm.east) -- (fox.west);
+\draw[darr] (faststop.south) -- (fox.north);
+\draw[darr] (done.north) -- (fox.south);
+
+% ================= PANEL (b): Mahoraga Development-Time Evolution =================
+\node[sky, below=17mm of panelA.south west, anchor=north west, xshift=3mm, text width=2.4cm] (sim) {%
+  \textbf{MuJoCo Harvest}\\
+  GPSR/HRI batches;\\
+  ground-truth scoring
+};
+
+\node[tealb, right=6.5mm of sim, text width=3.0cm] (ladder) {%
+  \textbf{Tool Ladder (Sim Only)}\\
+  1. Reuse verified bundle\\
+  2. Compose atomic tools\\
+  3. Sandboxed Python script\\
+  \textit{(bubblewrap; no net/ROS)}
+};
+
+\node[amber, right=6.5mm of ladder, text width=2.2cm] (cand) {%
+  \textbf{Candidate Store}\\
+  Track reuse rate,\\
+  success \& cost
+};
+
+\node[violetb, right=6.5mm of cand, text width=2.3cm] (human) {%
+  \textbf{Human Review}\\
+  Developers verify\\
+  \& promote via PR
+};
+
+\node[sage, anchor=north east, text width=5.2cm] (comp)
+  at ([yshift=-8.5mm]human.east |- ladder.south) {%
+  \textbf{Competition Library (Hard Access-Level Boundary)}\\
+  Verified atomic \& bundled tools only; code generation disabled on robot
+};
+
+\node[font=\sffamily\scriptsize\bfseries, text=cyan!60!black, anchor=south west, inner sep=1pt]
+  (btitle) at ([xshift=-1mm, yshift=2mm]sim.west |- ladder.north) {(b) Mahoraga: Development-Time Tool Evolution \& Human-in-the-Loop Promotion};
+
+\begin{scope}[on background layer]
+  \node[draw=cyan!60!black, line width=0.65pt, dashed, rounded corners=3pt, fill=cyan!3!white,
+        inner sep=4.5pt, fit=(btitle) (sim) (ladder) (cand) (human) (comp)] (panelB) {};
+\end{scope}
+
+% Panel (b) arrows
+\draw[arr] (sim) -- (ladder);
+\draw[arr] (ladder) -- (cand);
+\draw[arr] (cand) -- (human);
+\draw[arr] (human.south) -- node[lbl, right] {promote} (human.south |- comp.north);
+\draw[darr] (cand.south) |- ([yshift=-3.8mm]ladder.south) -| node[lbl, pos=0.25, below] {next sim episode} (sim.south);
+
+\end{tikzpicture}
