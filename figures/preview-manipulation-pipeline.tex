@@ -1,0 +1,13 @@
+\IfFileExists{standalone.cls}{%
+  \documentclass[tikz,border=4pt]{standalone}%
+}{%
+  \documentclass[10pt]{article}%
+  \usepackage[paperwidth=14.5cm,paperheight=11.5cm,margin=5mm]{geometry}%
+  \usepackage{tikz}%
+  \pagestyle{empty}%
+}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,backgrounds,calc}
+\begin{document}
+\centering
+\input{manipulation-pipeline}
+\end{document}
