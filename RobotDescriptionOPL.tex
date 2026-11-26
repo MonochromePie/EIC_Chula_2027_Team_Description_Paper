@@ -7,28 +7,43 @@
 \setlength\intextsep{0pt}
 \begin{wrapfigure}[10]{r}{0.27\textwidth}
 	\centering
-	\IfFileExists{images/WalikeRemoveBG1.png}{%
-		\includegraphics[width=0.92\linewidth]{images/WalikeRemoveBG1.png}%
+	\IfFileExists{images/walkie4_latest.png}{%
+  		\includegraphics[width=0.92\linewidth]{images/walkie4_latest.png}%
 	}{%
-		\includegraphics[width=0.92\linewidth]{images/Walkie4.jpg}%
+        \includegraphics[width=0.92\linewidth]{images/WalikeRemoveBG1.png}%
 	}
 	\caption{Walkie 4}%
 	\label{fig:wall-e}
 \end{wrapfigure}
 
-Walkie~4 is the fourth generation of EIC Chula's RoboCup@Home service robot:
+Walkie 4 is the fourth generation of EIC Chula's RoboCup@Home service robot:
 \renewcommand{\labelitemi}{---}
 \renewcommand{\labelitemii}{---}
 
-\begin{itemize}[noitemsep,topsep=1pt,leftmargin=1.1em]
-    \item \textbf{Dimensions \& Weight:} 57\,cm $\times$ 57\,cm $\times$ 130\,cm; 50\,kg % TODO(verify): Confirm dimensions/weight after dual-arm mount.
-    \item \textbf{Base:} 4-wheel omnidirectional drive (CubeMars actuators, CAN)
-    \item \textbf{Manipulators:} 2$\times$ 7-DoF OpenArm~v1.0 arms, parallel grippers (Damiao, CAN~FD)
-    \item \textbf{Torso \& Head:} 1-DoF lead/ball-screw lift (CAN); 1-DoF head tilt (Dynamixel), 14" Arzopa A1S monitor % TODO(verify): Confirm head tilt and screen for 2027.
-    \item \textbf{LiDARs:} Hokuyo UST-10LX (front 2D), LakiBeam~1L (rear 2D), Unitree 4D LiDAR~L2
-    \item \textbf{RGB-D \& Audio:} Stereolabs ZED~2i (head), Intel RealSense D415 (lower); Fifine USB / Rode VideoMic GO~II % TODO(verify): Confirm D415 and final microphone.
-    \item \textbf{Battery:} LiFePO4 8s, 24\,V, 640\,Wh % TODO(verify)
-    \item \textbf{Onboard Computer:} ASUS ROG Strix SCAR~15 G543ZX-HF058W (RTX~3080~Ti Laptop, 16\,GiB VRAM) % TODO(verify): Confirm final onboard laptop and GPU.
+\begin{itemize}
+    \item \textbf{Robot's Dimensions:} $57\,\text{cm} \times 57\,\text{cm} \times 130\,\text{cm}$
+    \item \textbf{Robot's Weight:} $50\,\text{kg}$
+    \item \textbf{Traction Type:} 4-wheel Omnidirectional
+    \item \textbf{Manipulators:} 2x 7-DoF OpenArm v1.0 arms with parallel grippers
+    \item \textbf{Torso \& Head:}
+    \begin{itemize}
+        \item Ball-screw drive lift system
+        \item 1-DoF head tilt (Dynamixel)
+    \end{itemize}
+    \item \textbf{LiDAR Sensors:}
+    \begin{itemize}
+        \item Hokuyo UST-10LX (front, 2D)
+        \item LakiBeam 1L (rear, 2D)
+        \item Unitree 4D LiDAR L2 (top, 3D)
+    \end{itemize}
+    \item \textbf{RGB-D Sensors:}
+    \begin{itemize}
+        \item Stereolabs ZED 2i (head)
+        \item Intel RealSense D415 (lower)
+    \end{itemize}
+    \item \textbf{Microphones:} Fifine k688 USB
+    \item \textbf{Battery:} Custom-built 8S LiFePO4 battery pack (24\,V, 640\,Wh)
+    \item \textbf{Laptop:} ASUS ROG Strix SCAR 15 G543ZX-HF058W (RTX 3080 Ti, 16\,GiB VRAM)
 \end{itemize}
 
 \vspace{1pt}
