@@ -1,0 +1,101 @@
+\begin{tikzpicture}[
+  font=\sffamily,
+  >=Stealth,
+  node distance=5mm and 6mm,
+  amber/.style={
+    draw=orange!70!black, line width=0.65pt, rounded corners=2pt,
+    fill=orange!11!white, align=center, inner sep=3.8pt, font=\sffamily\scriptsize
+  },
+  sky/.style={
+    draw=blue!65!black, line width=0.75pt, rounded corners=2pt,
+    fill=blue!9!white, align=center, inner sep=4pt, font=\sffamily\scriptsize
+  },
+  sage/.style={
+    draw=green!55!black, line width=0.65pt, rounded corners=2pt,
+    fill=green!10!white, align=center, inner sep=3.8pt, font=\sffamily\scriptsize
+  },
+  rose/.style={
+    draw=red!65!black, line width=0.8pt, rounded corners=2pt,
+    fill=red!11!white, align=center, inner sep=4pt, font=\sffamily\scriptsize
+  },
+  tealb/.style={
+    draw=cyan!65!black, line width=0.6pt, dashed, rounded corners=2pt,
+    fill=cyan!8!white, align=center, inner sep=3.5pt, font=\sffamily\scriptsize
+  },
+  violetb/.style={
+    draw=violet!60!black, line width=0.6pt, dashed, rounded corners=2pt,
+    fill=violet!9!white, align=center, inner sep=3.5pt, font=\sffamily\scriptsize
+  },
+  arr/.style={->, line width=0.65pt, draw=black!80},
+  darr/.style={->, line width=0.6pt, dashed, draw=black!65},
+  lbl/.style={font=\sffamily\tiny, fill=white, inner sep=1pt}
+]
+
+% ================= TOP-LEFT: Vision =================
+\node[amber, text width=2.4cm] (zed) {\textbf{ZED~2i RGB-D}\\Mailbox ($\le 10$\,Hz)\\opt.\ RGB-D pair};
+\node[amber, right=4.5mm of zed, text width=3.5cm] (vis) {%
+  \textbf{Single-Process GPU Vision}\\
+  YOLOE-26s-seg + ByteTrack\\
+  \textit{(opt.\ 3D lift + CLIP ViT-B/16)}\\
+  YOLO26s-pose + BoT-SORT (CMC)\\
+  SCRFD + ArcFace \textbar\ OSNet
+};
+
+% ================= BOTTOM-LEFT: Half-Duplex Speech =================
+\node[sage, below=16mm of zed, text width=2.4cm] (mic) {\textbf{Mic / Speaker}\\PipeWire audio\\(0.2\,s TTS buf.)};
+\node[sage, right=4.5mm of mic, text width=3.5cm] (voice) {%
+  \textbf{Half-Duplex Voice (ROS~2)}\\
+  ASR: Silero VAD + Whisper\\
+  TTS: Kokoro TTS (CPU, ONNX)\\
+  \textit{Speaking flag + 0.5\,s echo tail}\\
+  \textit{(opt.\ YAMNet doorbell in dev)}
+};
+
+% ================= CENTER-RIGHT: SQLite Memory =================
+\node[sky, right=9mm of vis, yshift=-3mm, text width=3.7cm] (mem) {%
+  \textbf{Unified SQLite Memory Node}\\
+  \textit{Single writer, WAL, \texttt{sqlite-vec}}\\
+  \textbf{Object/Scene:} TF $\rightarrow$ map, 2\,s\\
+  DBSCAN/PCA/slab/surface/\texttt{on},\\
+  \texttt{rtree}, \texttt{geopoly}, \texttt{vec0} (CLIP)\\
+  \textbf{People/Session:} ArcFace \&\\
+  OSNet exact scan, JSON, \texttt{fts5}
+};
+
+% ================= FAR-RIGHT: Agent & Foxglove =================
+\node[rose, right=8.5mm of mem, yshift=7.5mm, text width=2.3cm] (agent) {%
+  \textbf{Task-Planning}\\
+  \textbf{Agent}\\
+  Live perception,\\
+  memory lookup,\\
+  speech tools
+};
+
+\node[violetb, below=5mm of agent, text width=2.3cm] (viz) {%
+  \textbf{RViz / Foxglove}\\
+  3D object boxes,\\
+  merged clouds,\\
+  debug overlays
+};
+
+% Optional offline seed under mem
+\node[tealb, below=5mm of mem, text width=3.7cm] (seed) {%
+  \textbf{Offline Map Seeds:} rooms, static anchors, map hash
+};
+
+% Arrows
+\draw[arr] (zed) -- (vis);
+\draw[<->, line width=0.65pt, draw=black!80] (mic) -- (voice);
+\draw[arr] (vis.east) -- node[lbl, above] {3D clouds} node[lbl, below] {\& vectors} ([yshift=3mm]mem.west);
+\draw[arr] (vis.north) -- ++(0,4.5mm) -| node[lbl, pos=0.25, above] {paired live detections \& crop/embed services} (agent.north);
+\draw[<->, line width=0.65pt, draw=black!80] (mem.east |- agent.west) -- node[lbl, above] {ROS~2} node[lbl, below] {services} (agent.west);
+\draw[darr] ([yshift=-6.5mm]mem.east) -- ++(3.5mm,0) |- (viz.west);
+\draw[darr] (seed.north) -- (mem.south);
+
+\coordinate (vbot) at ([yshift=-5mm]seed.south);
+\draw[<->, line width=0.65pt, draw=black!80]
+  (voice.east) -- ++(3.5mm,0) |- (vbot)
+  node[lbl, pos=0.72, below=1pt] {transcribed text / speech requests}
+  -| ([xshift=4mm]viz.east) |- (agent.east);
+
+\end{tikzpicture}

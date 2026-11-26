@@ -1,0 +1,101 @@
+\begin{tikzpicture}[
+  font=\sffamily,
+  >=Stealth,
+  node distance=6mm and 6mm,
+  rose/.style={
+    draw=red!65!black, line width=0.8pt, rounded corners=2pt,
+    fill=red!10!white, align=center, inner sep=4.5pt, font=\sffamily\scriptsize
+  },
+  amber/.style={
+    draw=orange!70!black, line width=0.75pt, rounded corners=2pt,
+    fill=orange!12!white, align=center, inner sep=4.5pt, font=\sffamily\scriptsize
+  },
+  sky/.style={
+    draw=blue!65!black, line width=0.75pt, rounded corners=2pt,
+    fill=blue!9!white, align=center, inner sep=4.5pt, font=\sffamily\scriptsize
+  },
+  sage/.style={
+    draw=green!55!black, line width=0.65pt, rounded corners=2pt,
+    fill=green!10!white, align=center, inner sep=4.5pt, font=\sffamily\scriptsize
+  },
+  tealb/.style={
+    draw=cyan!65!black, line width=0.65pt, dashed, rounded corners=2pt,
+    fill=cyan!9!white, align=center, inner sep=4.5pt, font=\sffamily\scriptsize
+  },
+  violetb/.style={
+    draw=violet!60!black, line width=0.65pt, dashed, rounded corners=2pt,
+    fill=violet!9!white, align=center, inner sep=4.5pt, font=\sffamily\scriptsize
+  },
+  arr/.style={->, line width=0.65pt, draw=black!85},
+  darr/.style={->, line width=0.6pt, dashed, draw=black!65},
+  lbl/.style={font=\sffamily\tiny, fill=white, inner sep=1pt}
+]
+
+% Tier 1: Agent
+\node[rose, text width=6.5cm] (agent) {%
+  \textbf{Agent Manipulation Interface}\\
+  Named poses, gripper control, memory-based geometric pick\\
+  (stand-off $\rightarrow$ pre-grasp $\rightarrow$ Cartesian approach, 10\,cm lift); travel interlock
+};
+
+\node[violetb, right=6mm of agent, text width=2.8cm] (fox) {%
+  \textbf{Foxglove}\\
+  Planned stand-off\\
+  \& hand-pose\\
+  3D markers
+};
+
+% Tier 2: Commander
+\node[amber, below=5mm of agent, text width=6.5cm] (cmd) {%
+  \textbf{Bimanual Commander (C++ Action/Service Node)}\\
+  Single-arm IK-first (\texttt{TRAC-IK}); weighted whole-body base-pose search (rest posture,\\
+  facing \& motion costs); gripper grasp-gap check; collision-matrix toggles
+};
+
+\node[violetb, right=6mm of cmd, text width=2.8cm] (octo) {%
+  \textbf{3D Scene Input}\\
+  ZED~2i depth $\rightarrow$\\
+  map-frame OctoMap\\
+  (floor-gated)
+};
+
+% Tier 3: MoveIt 2
+\node[sky, below=4.5mm of cmd, text width=6.5cm] (moveit) {%
+  \textbf{MoveIt~2 Motion Planning}\\
+  OMPL (RRT-Connect / parallel whole-body search), heading unwrapping;\\
+  arm, arm+lift, gripper, and planar-base whole-body planning groups
+};
+
+% Tier 4: Execution (3 columns)
+\node[sage, below=6.5mm of moveit, xshift=-3.35cm, text width=2.85cm] (arms) {%
+  \textbf{Dual OpenArm v10}\\
+  7-DoF arms + grippers\\
+  \texttt{ros2\_control} (KDL grav.)\\
+  CAN FD buses
+};
+
+\node[sage, below=6.5mm of moveit, text width=2.7cm] (lift) {%
+  \textbf{Vertical Lift}\\
+  Joint trajectory ctrl.\\
+  (sim) / lift homing\\
+  driver (robot, CAN)
+};
+
+\node[tealb, below=6.5mm of moveit, xshift=3.5cm, text width=3.2cm] (base) {%
+  \textbf{Whole-Body Base Follower}\\
+  \textit{(opt-in; tested in MuJoCo)}\\
+  Ruckig velocity ctrl.\ $\rightarrow$\\
+  Nav2 collision monitor $\rightarrow$ base
+};
+
+% Arrows
+\draw[darr] (agent.east) -- (fox.west);
+\draw[arr] (agent.south) -- node[lbl, right] {pose, joint, named-state \& gripper actions} (cmd.north);
+\draw[arr] (cmd.south) -- (moveit.north);
+\draw[darr] (octo.south) |- (moveit.east);
+
+\draw[arr] ([xshift=-2.0cm]moveit.south) -- ++(0,-3mm) -| (arms.north);
+\draw[arr] (moveit.south) -- (lift.north);
+\draw[darr] ([xshift=2.0cm]moveit.south) -- ++(0,-3mm) -| node[lbl, pos=0.25, above] {base trajectory} (base.north);
+
+\end{tikzpicture}
