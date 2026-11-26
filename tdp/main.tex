@@ -68,7 +68,7 @@
 \def\runtitle{EIC Chula 2027 Team Description Paper}
 \def\shorttitle{EIC Chula 2027 TDP}
 
-\title{EIC Chula 2027 Team Description Paper}
+\title{EIC Chula 20267 Team Description Paper}
 \author{Supphakorn Akkapoo \and
 Khemin Pinitkiatsakul \and
 Sutthikan Panla \and
@@ -88,7 +88,7 @@ Nattawat Treerattanaphan}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{abstract}
-Domestic Human-Robot Interaction (HRI) tasks are open-ended and context-dependent. Our RoboCup@Home 2026 system replaced state machines with tool-calling Large Language Model (LLM) agents, but remained bounded by hand-written per-task skills and a split Python SDK/HTTP stack. For RoboCup@Home 2027, team EIC Chula introduces a unified ROS~2 Jazzy + Zenoh architecture for our dual-arm robot Walkie~4 alongside \emph{Mahoraga}, a development-time tool-evolution workflow. On the robot, one safety-guarded ReAct agent orchestrates typed atomic and bundled tools over ROS~2 while critical-path GPU vision, SQLite 3D spatial/person memory, half-duplex speech, navigation, anAppendixd MoveIt~2 whole-body manipulation run locally on-board (with optional cloud LLM/STT backends when venue internet is reliable). Offline in MuJoCo simulation, Mahoraga harvests reusable multi-step behaviors and sandboxed Python scripts, relying on developer pull-request review so unreviewed code never runs on the physical robot.
+Domestic Human-Robot Interaction (HRI) tasks are open-ended and context-dependent. Our RoboCup@Home 2026 system replaced state machines with tool-calling Large Language Model (LLM) agents, but remained bounded by hand-written per-task skills and a split Python SDK/HTTP stack. For RoboCup@Home 2027, team EIC Chula introduces a unified ROS~2 Jazzy + Zenoh architecture for our dual-arm robot Walkie~4 alongside \emph{Mahoraga}, a development-time tool-evolution workflow. On the robot, one safety-guarded ReAct agent orchestrates typed atomic and bundled tools over ROS~2 while critical-path GPU vision, SQLite 3D spatial/person memory, half-duplex speech, navigation, and MoveIt~2 whole-body manipulation run locally on-board (with optional cloud LLM/STT backends when venue internet is reliable). Offline in MuJoCo simulation, Mahoraga harvests reusable multi-step behaviors and sandboxed Python scripts, relying on developer pull-request review so unreviewed code never runs on the physical robot.
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -122,7 +122,7 @@ In 2026, planning reached the robot through a Python SDK and an external HTTP in
   \label{fig:arch-evolution}
 \end{figure}
 
-All nodes communicate over \textbf{Zenoh (\texttt{rmw\_zenoh\_cpp})}, resolving multicast discovery dropouts and TF latency spikes seen with DDS in 2026. Because venues do not guarantee internet connectivity, the entire critical path---GPU vision, SQLite memory, VAD/ASR/TTS, navigation, manipulation, and local LLM serving---runs locally on-board (with an optional companion laptop), while cloud LLM or speech APIs remain selectable when reliable connectivity exists. Every repository installs reproducibly in one command via Pixi and RoboStack.
+All nodes communicate over \textbf{Zenoh (\texttt{rmw\_zenoh\_cpp})}, resolving multicast discovery dropouts and TF latency spikes seen with DDS in 2026. Because venues do not guarantee internet connectivity, the entire critical path---GPU vision, SQLite memory, VAD/ASR/TTS, navigation, manipulation, and local LLM serving---runs locally on-board (with an optional companion laptop), while cloud LLM or speech APIs remain selectable when reliable connectivity exists.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Task-Planning Agent}
@@ -189,10 +189,9 @@ Mahoraga runs GPSR, HRI, and adversarial batches in MuJoCo~\cite{todorov2012mujo
 All vision models share one CUDA context in a single local GPU ROS~2 node (\cref{fig:vision-memory}, top-left), reading head ZED~2i frames via a latest-frame mailbox ($\le 10$\,Hz, optional RGB-D pairing):
 \begin{itemize}[noitemsep,topsep=1pt]
   \item \textbf{Objects:} YOLOE-26s-seg~\cite{wang2025yoloe} segments open-vocabulary objects from per-task text prompts with ByteTrack~\cite{zhang2022bytetrack}; object-memory mode adds 3D mask lifting, CLIP ViT-B/16~\cite{radford2021learningtransferablevisualmodels} embeddings, and an on-demand second detector.
-  \item \textbf{Pose \& Tracking:} YOLO26s-pose (17 COCO keypoints) pairs with BoT-SORT~\cite{aharon2022botsort} using sparse optical-flow camera-motion compensation---chosen over ByteTrack after a 5\,Hz panning check cut track-ID switches---plus score-ordered IoU deduplication ($>0.5$) and agent-side gesture/posture rules.
-  \item \textbf{Face \& Re-ID:} ONNX SCRFD~\cite{guo2022scrfd} + ArcFace (\texttt{w600k\_r50})~\cite{deng2019arcface} extract 512-D face vectors for up to six head crops/frame; OSNet~x1.0~\cite{zhou2019osnet} provides 512-D body re-ID vectors when faces are occluded.
+  \item \textbf{Pose \& Tracking:} YOLO26s-pose (17 COCO keypoints) pairs with BoT-SORT~\cite{aharon2022botsort} using sparse optical-flow camera-motion compensation---chosen over ByteTrack after a 5\,Hz panning check cut track-ID switches.
+  \item \textbf{Face \& Re-ID:} ONNX SCRFD~\cite{guo2022scrfd} + ArcFace ~\cite{deng2019arcface} extract 512-D face vectors for up to six head crops/frame; OSNet~x1.0~\cite{zhou2019osnet} provides 512-D body re-ID vectors when faces are occluded.
 \end{itemize}
-On an NVIDIA RTX~2060 laptop (base HRI config, 20 HD2K frames, two people), the node runs at 86.6\,ms median latency (108.2\,ms p95) in 862\,MiB VRAM. Robot-PC profiling alongside the ZED SDK and a CLIP vs.\ SigLIP~2~\cite{tschannen2025siglip2} / EmbeddingGemma~2 bake-off remain in progress.% TODO(verify): Update with robot-PC benchmark and final embedding model.
 
 \begin{figure}[tb]
   \centering
@@ -204,13 +203,12 @@ On an NVIDIA RTX~2060 laptop (base HRI config, 20 HD2K frames, two people), the 
 \subsection{Unified Spatial and Person Memory}
 \label{sec:memory}
 
-Replacing the 2026 dual FAISS indexes, a single-writer ROS~2 node owns one SQLite WAL file with \texttt{sqlite-vec}~\cite{garcia2024sqlitevec} per-model vector tables, 3D R-trees, 2D geopoly rooms, and FTS5 full-text search (\cref{fig:vision-memory}, center); callers supply model-tagged vectors so no neural models run inside memory. Inspired by ConceptGraphs~\cite{gu2024conceptgraphs}, 3D detections transform via TF into the content-hashed SLAM map frame and merge online in RAM by overlap, label, and visual similarity. Every 2\,s, DBSCAN denoising, upright yaw-only PCA boxes, wall-slab filtering ($<0.05$\,m), support-surface/\texttt{on}-relation extraction, and $\ge 3$-view confirmation persist objects alongside offline room/anchor seeds, publishing boxes/clouds to RViz and Foxglove (MoveIt collision publishing and stale-object expiration are planned). Session-scoped person tables store 512-D ArcFace/OSNet vectors, JSON attributes, and FTS5 logs, matched via exact SQL cosine scans and purged on reset.
+Replacing the 2026 dual FAISS indexes, a single-writer ROS~2 node owns one SQLite WAL file with \texttt{sqlite-vec}~\cite{garcia2024sqlitevec} per-model vector tables, 3D R-trees, 2D geopoly rooms, and FTS5 full-text search (\cref{fig:vision-memory}, center); callers supply model-tagged vectors so no neural models run inside memory. Inspired by ConceptGraphs~\cite{gu2024conceptgraphs}, the node merges map-frame 3D detections into persistent object memory and maintains session-scoped person embeddings.
 
 \subsection{Conversation and Half-Duplex Voice}
 \label{sec:conversation}
 
-Decoupled ASR and TTS ROS~2 nodes run on the RAI speech interface over PipeWire/PortAudio (\cref{fig:vision-memory}, bottom-left). Local Silero~VAD~\cite{silero2021vad} (16\,kHz, 80\,ms blocks, 1.0\,s grace) drives local Whisper/FasterWhisper~\cite{radford2022whisper} (\texttt{tiny} default, \texttt{small} cached on-board; optional cloud STT),% TODO(verify): Confirm final Whisper size.
-{} while CPU ONNX Kokoro~TTS~\cite{kokoro2025tts} speaks with a 0.2\,s buffer. Voice is half-duplex: a 4\,Hz speaking heartbeat mutes ASR during playback plus a 0.5\,s echo tail, and barge-in pauses/stops TTS. Experimental HRI extensions in development add confidence/echo filtering, playback lifecycle tracking, and offline ONNX YAMNet doorbell/knock detection.% TODO(verify)
+Decoupled ASR and TTS ROS~2 nodes run on the RAI speech interface over PipeWire/PortAudio (\cref{fig:vision-memory}, bottom-left). Voice is half-duplex: a 4\,Hz speaking heartbeat mutes ASR during playback plus a 0.5\,s echo tail, and barge-in pauses/stops TTS. Experimental HRI extensions in development add confidence/echo filtering, playback lifecycle tracking, and offline ONNX YAMNet doorbell/knock detection.% TODO(verify)
 
 \subsection{Navigation}
 \label{sec:navigation}
@@ -220,7 +218,7 @@ Walkie~4's 4-wheel omnidirectional base fuses front Hokuyo UST-10LX and rear Lak
 \subsection{Whole-Body Bimanual Manipulation}
 \label{sec:manipulation}
 
-Walkie~4 mounts dual 7-DoF OpenArm~v10 arms with 1-DoF parallel grippers (0--44\,mm stroke; 5--44\,mm grasp-hold band) on a 1-DoF vertical lift under \texttt{ros2\_control} (CAN~FD, KDL gravity compensation), coordinated by a C++ bimanual commander over \textbf{MoveIt~2}~\cite{coleman2014moveit} (\cref{fig:manipulation}).
+Walkie~4 mounts dual 7-DoF OpenArm~v1.0 arms with 1-DoF parallel grippers on a 1-DoF vertical lift under \texttt{ros2\_control} , coordinated by a C++ bimanual commander over \textbf{MoveIt~2}~\cite{coleman2014moveit} (\cref{fig:manipulation}).
 
 \begin{figure}[tb]
   \centering
@@ -229,21 +227,21 @@ Walkie~4 mounts dual 7-DoF OpenArm~v10 arms with 1-DoF parallel grippers (0--44\
   \label{fig:manipulation}
 \end{figure}
 
-For stationary targets, the commander runs IK-first planning via \textbf{TRAC-IK}~\cite{beeson2015tracik} (up to 4 seeds) and \textbf{OMPL} RRT-Connect~\cite{sucan2012ompl} (1.0\,s budget, 5.0\,s pose-space fallback; 0.5/0.3 velocity/acceleration scaling) against a floor-gated ZED~2i OctoMap. In opt-in whole-body mode, MoveIt~2 adds a planar map-frame base virtual joint: it tries stationary arm+lift IK first, else ranks sampled base poses by weighted base motion, facing, lift travel, arm motion, and tabletop rest posture, plans jointly via parallel RRT-Connect with $\pm\pi$ heading unwrapping, and executes base motion via a closed-loop \textbf{Ruckig}~\cite{berscheid2021ruckig} velocity follower gated by Nav2's Collision Monitor (with heartbeat and stall checks). For memory-backed picks, the agent computes a geometric grasp from the object's 3D box (tuck idle arm, stand-off, pre-grasp, Cartesian approach, 5--44\,mm grasp verify, 10\,cm lift, Foxglove markers). Whole-body picks are validated in MuJoCo and entering first physical-robot trials; fixed-base remains hardware default until the lift driver supports timed trajectory execution and cancellation.
+For stationary targets, the commander runs IK-first planning via \textbf{TRAC-IK}~\cite{beeson2015tracik} (up to 4 seeds) and \textbf{OMPL} RRT-Connect~\cite{sucan2012ompl} against a floor-gated ZED~2i OctoMap. In opt-in whole-body mode, MoveIt~2 adds a planar map-frame base virtual joint: it tries stationary arm+lift IK first, else ranks sampled base poses by weighted base motion, facing, lift travel, arm motion, and tabletop rest posture, plans jointly via parallel RRT-Connect, and executes base motion via a closed-loop \textbf{Ruckig}~\cite{berscheid2021ruckig} velocity follower gated by Nav2's Collision Monitor. For memory-backed picks, the agent computes a geometric grasp from the object's 3D box. Whole-body picks are validated in MuJoCo and entering first physical-robot trials; fixed-base remains hardware default until the lift driver supports timed trajectory execution and cancellation.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Simulation, Re-usability and Applicability}
 \label{sec:sim}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-One URDF/MJCF robot model is shared across Gazebo, MuJoCo, and Isaac Sim, with agent and whole-body behaviors developed MuJoCo-first. A robot-agnostic Blender add-on exports furnished rooms into MuJoCo worlds, tagging furniture, movable objects, and articulated doors with one click. Because every perception, memory, speech, and agent module exposes standard ROS~2 interfaces packaged via Pixi/RoboStack---with public documentation and Architecture Decision Records (repository link in the annex)---other teams can reuse the AI stack by swapping only hardware backends. Beyond competitions, separating offline synthesis from human-reviewed deployment offers a practical path toward safe, adaptable domestic robots.
+One URDF/MJCF robot model is shared across Gazebo, MuJoCo, and Isaac Sim, with agent and whole-body behaviors developed MuJoCo-first. A robot-agnostic Blender add-on exports furnished rooms into MuJoCo worlds, tagging furniture, movable objects, and articulated doors with one click. Beyond competitions, separating offline synthesis from human-reviewed deployment offers a practical path toward safe, adaptable domestic robots.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusion}
 \label{sec:conclusion}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-We presented EIC Chula's 2027 unified ROS~2 Jazzy + Zenoh architecture for Walkie~4, combining a safety-guarded ReAct agent, local GPU vision, SQLite 3D/person memory, half-duplex voice, Nav2 navigation, and MoveIt~2 whole-body manipulation with Mahoraga's simulation-first tool evolution and human promotion. Ongoing work will finish robot-PC vision/embedding benchmarks, validate timed lift control for physical whole-body picks, add retrieval-based tool filtering, and benchmark Mahoraga-grown libraries on unseen domestic tasks.
+We presented EIC Chula's 2027 unified ROS~2 Jazzy architecture for Walkie~4, combining a safety-guarded ReAct agent, local GPU vision, SQLite 3D/person memory, half-duplex voice, Nav2 navigation, and MoveIt~2 whole-body manipulation with Mahoraga's simulation-first tool evolution and human promotion. Ongoing work will finish robot-PC vision/embedding benchmarks, validate timed lift control for physical whole-body picks, add retrieval-based tool filtering, and benchmark Mahoraga-grown libraries on unseen domestic tasks.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Bibliography
