@@ -122,7 +122,7 @@ In 2026, planning reached the robot through a Python SDK and an external HTTP in
   \label{fig:arch-evolution}
 \end{figure}
 
-All nodes communicate over \textbf{Zenoh (\texttt{rmw\_zenoh\_cpp})}, resolving multicast discovery dropouts and TF latency spikes seen with DDS in 2026. Because venues do not guarantee internet connectivity, the entire critical path---GPU vision, SQLite memory, VAD/ASR/TTS, navigation, manipulation, and local LLM serving---runs locally on-board (with an optional companion laptop), while cloud LLM or speech APIs remain selectable when reliable connectivity exists.
+All nodes communicate over \textbf{Zenoh}, resolving multicast discovery dropouts and TF latency spikes seen with DDS in 2026. Because venues do not guarantee internet connectivity, the entire critical path like Vision, Memory, ASR, TTS, navigation, manipulation, and local LLM serving is runs locally on-board (with an optional companion laptop), while cloud LLM or speech APIs remain selectable when reliable connectivity exists.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Task-Planning Agent}
@@ -143,8 +143,8 @@ Deterministic middleware wraps every LLM turn: (1) a \textbf{single-threaded FIF
 \end{figure}
 
 \paragraph{Typed Tool Surface and LLM Backends.}
-\Cref{tab:tools} summarizes the atomic (single-operation) and bundled (tested multi-step) ROS~2 tools. The agent targets local OpenAI-compatible LLM serving (Ollama; final competition model under evaluation)% TODO(verify): Finalize on-board local LLM model and quantization.
-{} and has also been tested with optional cloud backends (DeepSeek~V4.1~Flash via OpenRouter). Retrieval-based tool filtering is planned to bound prompt size as the library scales.
+\Cref{tab:tools} summarizes the atomic (single-operation) and bundled (tested multi-step) ROS~2 tools. The agent targets local LLM serving
+{} and has also been tested with optional cloud backends. Retrieval-based tool filtering is planned to bound prompt size as the library scales.
 
 \begin{table}[tb]
   \centering
@@ -173,10 +173,10 @@ Deterministic middleware wraps every LLM turn: (1) a \textbf{single-threaded FIF
 Running LLM-generated code live during a competition is neither safe nor reliable. \emph{Mahoraga} shifts skill discovery into development-time simulation while keeping developers in control of what reaches Walkie~4 (\cref{fig:agent-mahoraga}b). Building on embodied skill libraries~\cite{wang2024voyager}, LLMs as tool makers~\cite{cai2024latm}, and code as policies~\cite{liang2023codeaspolicies}, Mahoraga enforces a hard boundary between development and deployment.
 
 \paragraph{Tool Ladder and Sandboxed Scripting.}
-In simulation, each subtask takes the lowest-risk rung that works: (1) reuse a verified bundle, (2) compose typed atomic tools into a reusable sequence, or (3) synthesize a short Python script calling robot capabilities strictly through a narrow typed bridge. We prototyped this scripting rung inside a \texttt{bubblewrap} sandbox (no network, secrets, or direct ROS~2 access) with operator approval, currently tested in mocks and simulation.
-
+In simulation, each subtask takes the lowest-risk rung that works: (1) reuse a verified bundle, (2) compose typed atomic tools into a reusable sequence, or (3) synthesize a short Python script calling robot capabilities strictly through a narrow typed bridge. We prototyped this scripting rung inside a \texttt{bubblewrap} sandbox (no network, secrets, or direct ROS~2 access) with operator approval.
+  
 \paragraph{Harvesting, Human Promotion, and Access Levels.}
-Mahoraga runs GPSR, HRI, and adversarial batches in MuJoCo~\cite{todorov2012mujoco} apartment worlds from clean snapshots, scoring ground truth to isolate planning, perception, navigation, or manipulation errors. Successful sequences and scripts enter a candidate store tracking reuse, success rate, latency, and call cost. Recurring candidates expose library gaps; developers act as the human-in-the-loop classifier, reviewing, refactoring, and merging approved tools by pull request---nothing promotes automatically. Three nested access levels, $\text{Unrestricted} \supset \text{Standard} \supset \text{Competition}$, enforce this boundary: only marked simulation hosts may run the first two, while \emph{Competition} (the sole mode on Walkie~4) disables code generation completely. Planned benchmarks will compare fixed vs.\ Mahoraga-grown libraries on held-out GPSR/HRI tasks (success, latency, reuse/composition rate, candidates per promoted tool, human fallbacks); no comparative metrics are claimed in this draft.
+Mahoraga runs GPSR, HRI, and adversarial batches in MuJoCo~\cite{todorov2012mujoco} apartment worlds from clean snapshots, scoring ground truth to isolate planning, perception, navigation, or manipulation errors. Successful sequences and scripts enter a candidate store tracking reuse, success rate, latency, and call cost. Recurring candidates expose library gaps; developers act as the human-in-the-loop classifier, reviewing, refactoring, and merging approved tools by pull request---nothing promotes automatically. Three nested access levels, $\text{Unrestricted} \supset \text{Standard} \supset \text{Competition}$, enforce this boundary: only marked simulation hosts may run the first two, while \emph{Competition} (the sole mode on Walkie~4) disables code generation completely. Planned benchmarks will compare fixed vs.\ Mahoraga-grown libraries on held-out GPSR/HRI tasks (success, latency, reuse/composition rate, candidates per promoted tool, human fallbacks).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{System Modules}
@@ -188,9 +188,9 @@ Mahoraga runs GPSR, HRI, and adversarial batches in MuJoCo~\cite{todorov2012mujo
 
 All vision models share one CUDA context in a single local GPU ROS~2 node (\cref{fig:vision-memory}, top-left), reading head-camera frames via a latest-frame mailbox ($\le 10$\,Hz, optional RGB-D pairing):
 \begin{itemize}[noitemsep,topsep=1pt]
-  \item \textbf{Objects:} YOLOE-26s-seg~\cite{wang2025yoloe} segments open-vocabulary objects from per-task text prompts with ByteTrack~\cite{zhang2022bytetrack}; object-memory mode adds 3D mask lifting, CLIP ViT-B/16~\cite{radford2021learningtransferablevisualmodels} embeddings, and an on-demand second detector.
-  \item \textbf{Pose \& Tracking:} YOLO26s-pose (17 COCO keypoints) pairs with BoT-SORT~\cite{aharon2022botsort} using sparse optical-flow camera-motion compensation---chosen over ByteTrack after a 5\,Hz panning check cut track-ID switches.
-  \item \textbf{Face \& Re-ID:} ONNX SCRFD~\cite{guo2022scrfd} + ArcFace ~\cite{deng2019arcface} extract 512-D face vectors for up to six head crops/frame; OSNet~x1.0~\cite{zhou2019osnet} provides 512-D body re-ID vectors when faces are occluded.
+  \item \textbf{Objects:} YOLOE-26s-seg~\cite{wang2025yoloe} segments open-vocabulary objects from per-task text prompts with ByteTrack~\cite{zhang2022bytetrack}; object-memory mode adds 3D mask lifting and CLIP ViT-B/16~\cite{radford2021learningtransferablevisualmodels} embeddings.
+  \item \textbf{Pose \& Tracking:} YOLO26s-pose pairs with BoT-SORT~\cite{aharon2022botsort} using sparse optical-flow camera-motion compensation---chosen over ByteTrack after a panning check cut track-ID switches.
+  \item \textbf{Face \& Re-ID:} ONNX SCRFD~\cite{guo2022scrfd} + ArcFace ~\cite{deng2019arcface} extract face vectors for head frame; OSNet~\cite{zhou2019osnet} provides body re-ID vectors when faces are occluded.
 \end{itemize}
 
 \begin{figure}[tb]
@@ -203,12 +203,12 @@ All vision models share one CUDA context in a single local GPU ROS~2 node (\cref
 \subsection{Unified Spatial and Person Memory}
 \label{sec:memory}
 
-Replacing the 2026 dual FAISS indexes, a single-writer ROS~2 node owns one SQLite WAL file with \texttt{sqlite-vec}~\cite{garcia2024sqlitevec} per-model vector tables, 3D R-trees, 2D geopoly rooms, and FTS5 full-text search (\cref{fig:vision-memory}, center); callers supply model-tagged vectors so no neural models run inside memory. Inspired by ConceptGraphs~\cite{gu2024conceptgraphs}, the node merges map-frame 3D detections into persistent object memory and maintains session-scoped person embeddings.
+A single-writer ROS~2 node owns one SQLite WAL file with \texttt{sqlite-vec}~\cite{garcia2024sqlitevec} per-model vector tables, 3D R-trees, 2D geopoly rooms, and FTS5 full-text search (\cref{fig:vision-memory}, center); callers supply model-tagged vectors so no neural models run inside memory. Inspired by ConceptGraphs~\cite{gu2024conceptgraphs}, the node merges map-frame 3D detections into persistent object memory and maintains session-scoped person embeddings.
 
 \subsection{Conversation and Half-Duplex Voice}
 \label{sec:conversation}
 
-Decoupled ASR and TTS ROS~2 nodes run on the RAI speech interface over PipeWire/PortAudio (\cref{fig:vision-memory}, bottom-left). Voice is half-duplex: a 4\,Hz speaking heartbeat mutes ASR during playback plus a 0.5\,s echo tail, and barge-in pauses/stops TTS. Experimental HRI extensions in development add confidence/echo filtering, playback lifecycle tracking, and offline ONNX YAMNet doorbell/knock detection.% TODO(verify)
+Decoupled ASR and TTS ROS~2 nodes run on the RAI speech interface over PipeWire/PortAudio (\cref{fig:vision-memory}, bottom-left). Voice is half-duplex: a speaking heartbeat mutes ASR during playback, and barge-in pauses TTS. Experimental HRI extensions in development add confidence/echo filtering, playback lifecycle tracking, and offline ONNX YAMNet doorbell/knock detection.% TODO(verify)
 
 \subsection{Navigation}
 \label{sec:navigation}
@@ -218,7 +218,7 @@ Walkie~4's 4-wheel omnidirectional base fuses front and rear 2D LiDARs with whee
 \subsection{Whole-Body Bimanual Manipulation}
 \label{sec:manipulation}
 
-Walkie~4 mounts dual 7-DoF manipulators with 1-DoF parallel grippers on a 1-DoF vertical lift under \texttt{ros2\_control}, coordinated by a C++ bimanual commander over \textbf{MoveIt~2}~\cite{coleman2014moveit} (\cref{fig:manipulation}).
+Walkie~4 mounts dual 7-DoF manipulators with parallel grippers on a vertical lift, coordinated by a C++ bimanual commander over \textbf{MoveIt~2}~\cite{coleman2014moveit} (\cref{fig:manipulation}).
 
 \begin{figure}[tb]
   \centering
@@ -227,7 +227,7 @@ Walkie~4 mounts dual 7-DoF manipulators with 1-DoF parallel grippers on a 1-DoF 
   \label{fig:manipulation}
 \end{figure}
 
-For stationary targets, the commander runs IK-first planning via \textbf{TRAC-IK}~\cite{beeson2015tracik} (up to 4 seeds) and \textbf{OMPL} RRT-Connect~\cite{sucan2012ompl} against a floor-gated OctoMap. In opt-in whole-body mode, MoveIt~2 adds a planar map-frame base virtual joint: it tries stationary arm+lift IK first, else ranks sampled base poses by weighted base motion, facing, lift travel, arm motion, and tabletop rest posture, plans jointly via parallel RRT-Connect, and executes base motion via a closed-loop \textbf{Ruckig}~\cite{berscheid2021ruckig} velocity follower gated by Nav2's Collision Monitor. For memory-backed picks, the agent computes a geometric grasp from the object's 3D box. Whole-body picks are validated in MuJoCo and entering first physical-robot trials; fixed-base remains hardware default until the lift driver supports timed trajectory execution and cancellation.
+For stationary targets, the commander runs IK-first planning via \textbf{TRAC-IK}~\cite{beeson2015tracik} and \textbf{OMPL} RRT-Connect~\cite{sucan2012ompl} against a floor-gated OctoMap. In opt-in whole-body mode, MoveIt~2 adds a planar map-frame base virtual joint: it tries stationary arm+lift IK first, else ranks sampled base poses by weighted base motion, facing, lift travel, arm motion, and tabletop rest posture, plans jointly via parallel RRT-Connect, and executes base motion via a closed-loop \textbf{Ruckig}~\cite{berscheid2021ruckig} velocity follower gated by Nav2's Collision Monitor. For memory-backed picks, the agent computes a geometric grasp from the object's 3D box. Whole-body picks are validated in MuJoCo and entering first physical-robot trials; fixed-base remains hardware default until the lift driver supports timed trajectory execution and cancellation.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Simulation, Re-usability and Applicability}
