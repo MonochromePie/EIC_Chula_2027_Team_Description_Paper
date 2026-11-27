@@ -54,7 +54,7 @@
 
 \node[violetb, right=6mm of cmd, text width=2.8cm] (octo) {%
   \textbf{3D Scene Input}\\
-  ZED~2i depth $\rightarrow$\\
+  head-camera depth $\rightarrow$\\
   map-frame OctoMap\\
   (floor-gated)
 };
@@ -68,8 +68,8 @@
 
 % Tier 4: Execution (3 columns)
 \node[sage, below=6.5mm of moveit, xshift=-3.35cm, text width=2.85cm] (arms) {%
-  \textbf{Dual OpenArm v10}\\
-  7-DoF arms + grippers\\
+  \textbf{Dual 7-DoF Manipulators}\\
+  Parallel grippers\\
   \texttt{ros2\_control} (KDL grav.)\\
   CAN FD buses
 };

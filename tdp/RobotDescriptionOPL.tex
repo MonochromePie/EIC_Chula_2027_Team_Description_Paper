@@ -7,48 +7,69 @@
 \setlength\intextsep{0pt}
 \begin{wrapfigure}[10]{r}{0.27\textwidth}
 	\centering
-	\IfFileExists{images/WalikeRemoveBG1.png}{%
-		\includegraphics[width=0.92\linewidth]{images/WalikeRemoveBG1.png}%
+	\IfFileExists{images/walkie4_latest.png}{%
+  		\includegraphics[width=0.92\linewidth]{images/walkie4_latest.png}%
 	}{%
-		\includegraphics[width=0.92\linewidth]{images/Walkie4.jpg}%
+        \includegraphics[width=0.92\linewidth]{images/WalikeRemoveBG1.png}%
 	}
 	\caption{Walkie 4}%
 	\label{fig:wall-e}
 \end{wrapfigure}
-
-Walkie~4 is the fourth generation of EIC Chula's RoboCup@Home service robot:
+  
+\rightskip=0pt plus 1fil
+Walkie 4 is the fourth generation of EIC Chula's RoboCup@Home service robot. Specifications are as follows:  \par
+\rightskip=0pt
+  
 \renewcommand{\labelitemi}{---}
 \renewcommand{\labelitemii}{---}
 
-\begin{itemize}[noitemsep,topsep=1pt,leftmargin=1.1em]
-    \item \textbf{Dimensions \& Weight:} 57\,cm $\times$ 57\,cm $\times$ 130\,cm; 50\,kg % TODO(verify): Confirm dimensions/weight after dual-arm mount.
-    \item \textbf{Base:} 4-wheel omnidirectional drive (CubeMars actuators, CAN)
-    \item \textbf{Manipulators:} 2$\times$ 7-DoF OpenArm~v10 arms, parallel grippers (Damiao, CAN~FD)
-    \item \textbf{Torso \& Head:} 1-DoF lead/ball-screw lift (CAN); 1-DoF head tilt (Dynamixel), 14" Arzopa A1S monitor % TODO(verify): Confirm head tilt and screen for 2027.
-    \item \textbf{LiDARs:} Hokuyo UST-10LX (front 2D), LakiBeam~1L (rear 2D), Unitree 4D LiDAR~L2
-    \item \textbf{RGB-D \& Audio:} Stereolabs ZED~2i (head), Intel RealSense D415 (lower); Fifine USB / Rode VideoMic GO~II % TODO(verify): Confirm D415 and final microphone.
-    \item \textbf{Battery:} LiFePO4 8s, 24\,V, 640\,Wh % TODO(verify)
-    \item \textbf{Onboard Computer:} ASUS ROG Strix SCAR~15 G543ZX-HF058W (RTX~3080~Ti Laptop, 16\,GiB VRAM) % TODO(verify): Confirm final onboard laptop and GPU.
+\begin{itemize}
+    \item \textbf{Robot's Dimensions:} $57\,\text{cm} \times 57\,\text{cm} \times 130\,\text{cm}$
+    \item \textbf{Robot's Weight:} $50\,\text{kg}$
+    \item \textbf{Traction Type:} 4-wheel Omnidirectional
+    \item \textbf{Manipulators:} 2x 7-DoF OpenArm v1.0 arms with parallel grippers
+    \item \textbf{Torso \& Head:}
+    \begin{itemize}
+        \item Ball-screw drive lift system
+        \item 1-DoF head tilt (Dynamixel)
+    \end{itemize}
+    \item \textbf{LiDAR Sensors:}
+    \begin{itemize}
+        \item Hokuyo UST-10LX (front, 2D)
+        \item LakiBeam 1L (rear, 2D)
+        \item Unitree 4D LiDAR L2 (top, 3D)
+    \end{itemize}
+    \item \textbf{RGB-D Sensors:}
+    \begin{itemize}
+        \item Stereolabs ZED 2i (head)
+        \item Intel RealSense D415 (bottom)
+    \end{itemize}
+    \item \textbf{Microphones:} Fifine K688
+    \item \textbf{Battery:} Custom LFP battery pack (24\,V, 640\,Wh)
+    \item \textbf{Laptop:} ASUS ROG Strix SCAR 15 G543ZX-HF058W
 \end{itemize}
 
 \vspace{1pt}
+
 \section*{Software Description}
 \begin{itemize}[noitemsep,topsep=1pt,leftmargin=1.1em]
-    \item \textbf{OS \& Middleware:} Ubuntu~24.04~LTS, ROS~2 Jazzy, Zenoh (\texttt{rmw\_zenoh\_cpp}), Pixi + RoboStack
-    \item \textbf{Navigation:} SLAM Toolbox (dual 2D LiDAR + omni odometry); Nav2 (AMCL, MPPI, Rotation Shim, STVL ZED~2i depth, Collision Monitor, keepout zones)
-    \item \textbf{Manipulation:} MoveIt~2 with C++ bimanual commander, TRAC-IK, OMPL RRT-Connect, Ruckig; opt-in whole-body planning (base + lift + arm) validated in MuJoCo, under real-robot trial
-    \item \textbf{Simulation:} Shared URDF/MJCF across MuJoCo, Gazebo, and Isaac Sim; in-house Blender-to-MuJoCo room exporter
-    \item \textbf{Telemetry:} RViz~2, Foxglove Studio (live reasoning logs, checklist, 3D memory and grasp markers)
-    \item \textbf{Agent \& LLM:} Single ROS~2 ReAct agent (RAI, LangChain, LangGraph) with safety middleware; local LLM via Ollama or OpenAI-compatible server (model TBD), optional cloud API (tested with DeepSeek~V4.1~Flash via OpenRouter) when venue internet is available % TODO(verify)
-    \item \textbf{Vision (Local GPU Node):} YOLOE-26s-seg + ByteTrack (open-vocab objects); YOLO26s-pose + BoT-SORT with CMC (pose/gestures); SCRFD + ArcFace \texttt{w600k\_r50} (ONNX) and OSNet~x1.0 (face/body re-ID); CLIP ViT-B/16 embeddings (SigLIP~2 / EmbeddingGemma~2 bake-off ongoing) % TODO(verify)
-    \item \textbf{Memory:} Unified SQLite (WAL) + \texttt{sqlite-vec} node (ConceptGraphs-inspired online 3D object/surface memory; session-scoped ArcFace/OSNet person memory)
-    \item \textbf{Speech (Half-Duplex):} Local Silero~VAD + Whisper/FasterWhisper (optional cloud STT); local CPU ONNX Kokoro~TTS; YAMNet doorbell/knock detector (in development) % TODO(verify)
-    \item \textbf{Public Repositories \& Docs:} \url{https://github.com/EIC-Robocup-2026} (code, documentation, ADRs)
+    \item \textbf{OS \& Middleware:} Ubuntu~24.04~LTS, ROS~2 Jazzy
+    \item \textbf{Navigation:} SLAM Toolbox (mapping), Nav2 (AMCL, MPPI, STVL)
+    \item \textbf{Manipulation:} MoveIt~2 + in-house whole-body planning algorithm
+    \item \textbf{Perception:}
+    \begin{itemize}[noitemsep,topsep=0pt,leftmargin=1.2em]
+        \item Objects \& Pose: YOLOE-26s
+        \item People \& Embeddings: SCRFD + ArcFace (face), OSNet (body re-ID), CLIP
+    \end{itemize}
+    \item \textbf{Task Planning \& LLM:} ReAct agent with local LLM and optional cloud API
+    \item \textbf{Speech:} Silero~VAD, Faster-Whisper (STT), Kokoro~TTS
+    \item \textbf{Simulation:} MuJoCo, Isaac Sim
+    \item \textbf{Public Repository:} \url{https://github.com/EIC-Robocup}
 \end{itemize}
-
+  
 \vspace{1pt}
 \section*{External Devices}
 \begin{itemize}[noitemsep,topsep=1pt,leftmargin=1.1em]
-    \item \textbf{Optional Companion Laptop:} ASUS ROG Strix SCAR~18 G835LX-SA008W for local LLM serving or heavy compute when deployed % TODO(verify): Confirm whether external laptop is deployed for 2027.
+    \item \textbf{Optional Companion Laptop:} ASUS ROG Strix SCAR~18 G835LX-SA008W
 \end{itemize}
 \endgroup

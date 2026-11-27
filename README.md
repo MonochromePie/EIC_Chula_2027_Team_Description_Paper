@@ -8,6 +8,7 @@ Limit: 8 pages including references, plus the robot specification sheet (OPL ann
 
 ```
 .
+├── pixi.toml, pixi.lock   # Pixi workspace (Tectonic LaTeX engine + build tasks)
 ├── build.sh               # build a paper: pdflatex -> bibtex -> pdflatex x2
 ├── setup_latex.sh         # install / check the local TeX Live toolchain
 ├── extra_dict.pws         # extra words for the spell checker (aspell)
@@ -22,7 +23,19 @@ Limit: 8 pages including references, plus the robot specification sheet (OPL ann
     └── build/             # aux/log/bbl files (git-ignored)
 ```
 
-## 1. Install the LaTeX toolchain
+## Quickstart (Pixi)
+
+The fastest cross-platform way to build the paper (no `sudo` or system TeX Live installation required on Linux, macOS, or Windows):
+
+```bash
+pixi run build      # installs Tectonic, auto-fetches LaTeX packages on first run, builds tdp/main.pdf
+pixi run figures    # compiles all standalone TikZ previews in tdp/figures/
+pixi run clean      # removes tdp/build/
+```
+
+Tectonic runs BibTeX automatically and caches downloaded CTAN packages locally after the first build.
+
+## 1. Install the LaTeX toolchain (alternative: system TeX Live)
 
 The paper builds with **pdfLaTeX + BibTeX** from TeX Live. You don't need `texlive-full`.
 `setup_latex.sh` installs the TeX Live packages the paper needs and then checks that every

@@ -1,0 +1,13 @@
+[workspace]
+name = "eic-chula-2027-tdp"
+description = "EIC Chula — RoboCup@Home 2027 Team Description Paper"
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
+
+[dependencies]
+tectonic = ">=0.15"
+
+[tasks]
+build = { cmd = "tectonic main.tex", cwd = "tdp", description = "Compile tdp/main.tex to tdp/main.pdf" }
+figures = { cmd = "tectonic preview-arch-evolution.tex && tectonic preview-agent-mahoraga.tex && tectonic preview-vision-memory-pipeline.tex && tectonic preview-manipulation-pipeline.tex", cwd = "tdp/figures", description = "Compile all standalone TikZ figure previews" }
+clean = { cmd = "rm -rf tdp/build", description = "Remove legacy local build artifacts" }
